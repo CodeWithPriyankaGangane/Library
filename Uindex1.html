@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Library Management — Login (Frontend Only)</title>
+
+<style>
+  /* 💎 Background Styling */
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #007bff 0%, #00eaff 100%);
+    background-attachment: fixed;
+    margin:0;
+    padding:30px;
+  }
+
+  .app {
+    max-width:900px;
+    margin:0 auto;
+    animation: fadeIn 0.8s ease-in-out;
+  }
+
+  /* Card UI Improvements */
+  .card {
+    background:white;
+    padding:18px;
+    border-radius:15px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+  }
+
+  header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+  }
+
+  h1 {
+    margin:0;
+    font-size:20px;
+    color:#fff;
+    text-shadow: 0px 2px 4px rgba(0,0,0,.4);
+  }
+
+  .small {
+    font-size:13px;
+    color:#eee;
+  }
+
+  .controls {
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+
+  button {
+    padding:8px 12px;
+    border:0;
+    border-radius:8px;
+    cursor:pointer;
+  }
+
+  .btn-primary { background:#0059d4; color:white; }
+  .btn-danger { background:#e02424; color:white; }
+  .btn-ghost { background:transparent; color:white; border:1px solid #f5f5f5; }
+
+  .layout {
+    display:grid;
+    grid-template-columns: 320px 1fr;
+    gap:18px;
+  }
+
+  input[type="text"], input[type="password"], select {
+    width:100%;
+    padding:9px;
+    border-radius:6px;
+    border:1px solid #ccc;
+  }
+
+  #bookList li {
+    display:flex;
+    justify-content:space-between;
+    padding:12px;
+    margin-top:10px;
+    border-radius:6px;
+    background:#f7f7f7;
+    align-items:center;
+  }
+
+  .muted { color:#555; font-size:13px; }
+  .hidden { display:none !important; }
+  .top-bar { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+
+  .role-pill {
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:600;
+    font-size:13px;
+  }
+
+  .role-admin { background:#ffe8e8; color:#b30f0f; border:1px solid #f2b8b8; }
+  .role-user { background:#eaf6ff; color:#055a9a; border:1px solid #cce8ff; }
+
+  /* Smooth Fade */
+  @keyframes fadeIn {
+    from { opacity:0; transform:translateY(10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+</style>
+
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div>
+      <h1>📚 Mini Library — Frontend Only</h1>
+      <div class="small">Role-based features • LocalStorage demo</div>
+    </div>
+
+    <div class="controls" id="authControls">
+      <!-- dynamic: login/register or user info + logout -->
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- LEFT: Auth (Login/Register) -->
+    <div class="card" id="authCard">
+
+      <!-- Login -->
+      <div id="loginPanel">
+        <h3>Login</h3>
+        <div class="form-group"><input id="loginUsername" type="text" placeholder="Username" /></div>
+        <div class="form-group"><input id="loginPassword" type="password" placeholder="Password" /></div>
+        <button class="btn-primary" onclick="login()">Login</button>
+        <button class="btn-ghost" onclick="showRegister()">Register</button>
+        <div class="muted" style="margin-top:8px;">Default Admin: <strong>admin / admin123</strong></div>
+      </div>
+
+      <!-- Register -->
+      <div id="registerPanel" class="hidden">
+        <h3>Create New Account</h3>
+        <div class="form-group"><input id="regUsername" type="text" placeholder="Choose username" /></div>
+        <div class="form-group"><input id="regPassword" type="password" placeholder="Choose password" /></div>
+        <button class="btn-primary" onclick="registerUser()">Sign Up</button>
+        <button class="btn-ghost" onclick="showLogin()">Back</button>
+        <div class="muted">All new users become <strong>User</strong> role.</div>
+      </div>
+
+      <!-- Account Summary -->
+      <div id="accountPanel" class="hidden">
+        <h3>Account</h3>
+        <div id="accountInfo" class="muted"></div><br>
+        <button class="btn-primary" onclick="logout()">Logout</button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Books Section -->
+    <div>
+      <div class="card">
+        <input id="searchBox" type="text" placeholder="Search..." oninput="searchBook()" />
+
+        <div id="roleDisplay" style="margin-top:10px;"></div>
+
+        <div id="addBookForm" class="hidden" style="margin-top:12px;">
+          <input id="bookName" type="text" placeholder="Book name" />
+          <input id="authorName" type="text" placeholder="Author" />
+          <button class="btn-primary" onclick="addBook()">Add</button>
+          <div class="muted small">Only Admins can add & remove books</div>
+        </div>
+
+        <h3 style="margin-top:18px;">📖 Books</h3>
+        <ul id="bookList"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 💡 Same JavaScript Logic Kept Intact -->
+<script>
+/* ---------- Same JS Code Without Changes ---------- */
+function seedDefaults() {
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  if (!users.find(u => u.username === 'admin')) {
+    users.push({ username: 'admin', password: 'admin123', role: 'admin' });
+    localStorage.setItem('users', JSON.stringify(users));
+  }
+  const books = JSON.parse(localStorage.getItem('books') || '[]');
+  if (books.length === 0) {
+    const sample = [
+      { name: 'Clean Code', author: 'Robert C. Martin' },
+      { name: 'Introduction to Algorithms', author: 'CLRS' },
+      { name: 'Design Patterns', author: 'Erich Gamma' }
+    ];
+    localStorage.setItem('books', JSON.stringify(sample));
+  }
+}
+seedDefaults();
+
+function getUsers() { return JSON.parse(localStorage.getItem('users')||'[]'); }
+function saveUsers(u){ localStorage.setItem('users', JSON.stringify(u)); }
+function currentSession(){ return JSON.parse(localStorage.getItem('sessionUser')||'null'); }
+
+function login(){
+  const u = loginUsername.value.trim(), p = loginPassword.value;
+  const user = getUsers().find(x=>x.username===u && x.password===p);
+  if(!user) return alert('Wrong credentials');
+  localStorage.setItem('sessionUser', JSON.stringify(user));
+  onAuthChange();
+}
+function logout(){ localStorage.removeItem('sessionUser'); onAuthChange(); }
+function registerUser(){
+  const u = regUsername.value.trim(), p = regPassword.value;
+  const users = getUsers();
+  if(users.find(x=>x.username===u)) return alert('Username exists!');
+  users.push({ username:u, password:p, role:'user' });
+  saveUsers(users);
+  alert('Registered! Now login.');
+  showLogin();
+}
+
+function showRegister(){ loginPanel.classList.add('hidden'); registerPanel.classList.remove('hidden'); }
+function showLogin(){ registerPanel.classList.add('hidden'); loginPanel.classList.remove('hidden'); }
+
+function onAuthChange(){
+  const s = currentSession();
+  accountPanel.classList.toggle('hidden', !s);
+  loginPanel.classList.toggle('hidden', !!s);
+  registerPanel.classList.add('hidden');
+  roleDisplay.innerHTML = s ? `<div class="role-pill ${s.role==='admin'?'role-admin':'role-user'}">${s.role}</div>` : '';
+  addBookForm.classList.toggle('hidden', !(s && s.role==='admin'));
+  renderBooks();
+  accountInfo.innerHTML = s ? `User: <strong>${s.username}</strong>` : '';
+}
+
+function getBooks(){ return JSON.parse(localStorage.getItem('books')||'[]'); }
+function saveBooks(b){ localStorage.setItem('books', JSON.stringify(b)); }
+
+function addBook(){
+  const s=currentSession();
+  if(!s||s.role!=='admin')return;
+  const name=bookName.value.trim(), author=authorName.value.trim();
+  if(!name)return;
+  const books=getBooks(); books.push({name,author}); saveBooks(books);
+  bookName.value=''; authorName.value=''; renderBooks();
+}
+
+function deleteBook(i){
+  const b=getBooks(); b.splice(i,1); saveBooks(b); renderBooks();
+}
+
+function renderBooks(){
+  const list=bookList; list.innerHTML='';
+  getBooks().forEach((b,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<strong>${b.name}</strong><div class="muted">by ${b.author}</div>`;
+    if(currentSession()?.role==='admin'){
+      const del=document.createElement('button'); del.className='btn-danger'; del.textContent='Delete';
+      del.onclick=()=>deleteBook(i); li.appendChild(del);
+    }
+    list.appendChild(li);
+  });
+}
+
+function searchBook(){
+  const q=searchBox.value.toLowerCase(); const f=getBooks().filter(b=>b.name.toLowerCase().includes(q)||b.author.toLowerCase().includes(q));
+  bookList.innerHTML=''; 
+  f.forEach((b,i)=>{const li=document.createElement('li'); li.innerHTML=`<strong>${b.name}</strong><div>${b.author}</div>`; bookList.appendChild(li);});
+}
+
+onAuthChange();
+</script>
+
+</body>
+</html>
