@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library Management</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #eef2f3;
+        margin: 0;
+        padding: 30px;
+    }
+    .container {
+        max-width: 600px;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin: auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 5px;
+        border: 1px solid #aaa;
+    }
+    button {
+        width: 100%;
+        padding: 10px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    button:hover {
+        background: #0056b3;
+    }
+    .search-box {
+        margin-top: 20px;
+    }
+    ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+    }
+    li {
+        display: flex;
+        justify-content: space-between;
+        background: #f6f6f6;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    li span {
+        font-weight: bold;
+    }
+    .delete-btn {
+        background: red;
+        color: white;
+        padding: 5px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: none;
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Library Management System</h2>
+
+    <input type="text" id="bookName" placeholder="Book Name">
+    <input type="text" id="authorName" placeholder="Author Name">
+
+    <button onclick="addBook()">Add Book</button>
+
+    <input type="text" id="searchBox" class="search-box" placeholder="Search Book..." onkeyup="searchBook()">
+
+    <ul id="bookList"></ul>
+</div>
+
+<script>
+    let books = JSON.parse(localStorage.getItem("books")) || [];
+
+    function displayBooks(filteredBooks = books) {
+        const list = document.getElementById("bookList");
+        list.innerHTML = "";
+
+        filteredBooks.forEach((book, index) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <span>${book.name} — ${book.author}</span>
+                <button class="delete-btn" onclick="deleteBook(${index})">X</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    function addBook() {
+        const book = document.getElementById("bookName").value;
+        const author = document.getElementById("authorName").value;
+
+        if (book === "" || author === "") {
+            alert("Please fill both fields!");
+            return;
+        }
+
+        books.push({ name: book, author: author });
+        localStorage.setItem("books", JSON.stringify(books));
+
+        document.getElementById("bookName").value = "";
+        document.getElementById("authorName").value = "";
+        displayBooks();
+    }
+
+    function deleteBook(index) {
+        books.splice(index, 1);
+        localStorage.setItem("books", JSON.stringify(books));
+        displayBooks();
+    }
+
+    function searchBook() {
+        const search = document.getElementById("searchBox").value.toLowerCase();
+        const filtered = books.filter(book =>
+            book.name.toLowerCase().includes(search) ||
+            book.author.toLowerCase().includes(search)
+        );
+        displayBooks(filtered);
+    }
+
+    displayBooks();
+</script>
+
+</body>
+</html>
